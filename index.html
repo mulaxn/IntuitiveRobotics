@@ -86,11 +86,11 @@
     function drawAxes(x, y, angle, labelPrefix = '') {
       const xAxis = {
         x: x + axisLength * Math.cos(angle),
-        y: y + axisLength * Math.sin(angle)
+        y: y + axisLength * Math.sin(angle) 
       };
       const yAxis = {
-        x: x - axisLength * Math.sin(angle),
-        y: y + axisLength * Math.cos(angle)
+        x: x - axisLength * Math.sin(angle + Math.PI),
+        y: y + axisLength * Math.cos(angle + Math.PI)
       };
 
       ctx.beginPath();
