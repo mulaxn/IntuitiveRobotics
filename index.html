@@ -156,20 +156,20 @@
       ctx.fill();
 
       // Draw angle labels
-      drawAngleLabel(base.x, base.y, `θ1: ${(theta1 * 180 / Math.PI).toFixed(1)}°`);
-      drawAngleLabel(joint1.x, joint1.y, `θ2: ${(theta2 * 180 / Math.PI).toFixed(1)}°`);
+      drawAngleLabel(base.x, base.y, `θ1: ${(theta1 * -180 / Math.PI).toFixed(1)}°`);
+      drawAngleLabel(joint1.x, joint1.y, `θ2: ${(theta2 * -180 / Math.PI).toFixed(1)}°`);
 
       // Sync inputs with current angles
-      theta1Input.value = (theta1 * 180 / Math.PI).toFixed(1);
-      theta2Input.value = (theta2 * 180 / Math.PI).toFixed(1);
+      theta1Input.value = (theta1 * -180 / Math.PI).toFixed(1);
+      theta2Input.value = (theta2 * -180 / Math.PI).toFixed(1);
     }
 
     // === Manual Input Handler ===
     function applyThetaInputs() {
       const t1 = parseFloat(theta1Input.value);
       const t2 = parseFloat(theta2Input.value);
-      if (!isNaN(t1)) theta1 = t1 * Math.PI / 180;
-      if (!isNaN(t2)) theta2 = t2 * Math.PI / 180;
+      if (!isNaN(t1)) theta1 = t1 * Math.PI / -180;
+      if (!isNaN(t2)) theta2 = t2 * Math.PI / -180;
       drawArm();
     }
 
