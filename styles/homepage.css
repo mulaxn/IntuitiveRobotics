@@ -1,0 +1,18 @@
+body {
+    display: flex;
+    gap: 20px;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    cursor: grab;
+  }
+  #controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  label {
+    font-size: 14px;
+  }
