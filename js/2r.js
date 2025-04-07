@@ -14,7 +14,7 @@
     const link2Length = 100;
 
     // === Initial State ===
-    let base = { x: 300, y: 300 };
+    let base = { x: 250, y: 300 };
     let theta1 = 0;
     let theta2 = 0;
     let draggingPart = null;

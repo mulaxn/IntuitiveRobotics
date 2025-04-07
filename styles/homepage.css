@@ -2,17 +2,20 @@ body {
     display: flex;
     gap: 20px;
     font-family: Arial, sans-serif;
-  }
-  canvas {
+}
+canvas {
     border: 1px solid #ccc;
     background-color: #f9f9f9;
     cursor: grab;
-  }
-  #controls {
+}
+#controls {
     display: flex;
     flex-direction: column;
     gap: 10px;
-  }
-  label {
+}
+label {
     font-size: 14px;
-  }
+}
+#explaination{
+    padding-top: 68px;
+}
