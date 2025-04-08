@@ -71,16 +71,15 @@ exp =
     P.O.E: T(θ) = e^([S1]θ1) e^([S2]θ2) ... e^([Sn]θn) M
 
     <br></br>
-
-    To get e^[Si] we first need: <br></br><pre>
-    [e^[ωi]θi   (I - e^[ωi]θi)γi]
-    [   0              1        ]</pre>
+    <pre>
+    e^[Si] = [e^[ωi]θi   (I - e^[ωi]θi)γi]
+             [   0              1        ]</pre>
 
     e^[ωi] = I + sin(θ)[ωi] + (1 - cos(θ))[ωi]^2, where [ωi] is the skew-symetric
     matrix related to ωi.
 
     <br></br>
-    
+
     Once we complete this process for all joints we multiply all of our matrices
     together according to the formula and get our answer.
 </p>`

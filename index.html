@@ -1,29 +1,15 @@
-<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>2R Robot - Drag & Drop Control</title>
-  <link rel="stylesheet" href="styles/homepage.css" />
-  <script defer src="js/2r.js"></script>
-  <script defer src="js/explaination.js"></script>
-</head>
-<body>
-  <!-- Canvas Area -->
-  <div>
-    <h2>2R Robot Arm – Drag to Rotate or Move Base</h2>
-    <canvas id="canvas" width="600" height="600"></canvas>
-  </div>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/homepage.css" />
+    <link rel="stylesheet" href="styles/global.css" />
+    <title>Subhan Haq's Website</title>
+  </head>
 
-  <!-- Manual Controls -->
-  <div id="controls">
-    <h3>Manual Input</h3>
-    <label>θ1 (deg): <input type="number" id="theta1Input" step="0.1"></label>
-    <label>θ2 (deg): <input type="number" id="theta2Input" step="0.1"></label>
-    <button onclick="applyThetaInputs()">Apply Angles</button>
-  </div>
-  <div src="2r.js"></div>
-  
-<!-- Forward Kinematics Explaination -->
-  <div id="explaination"></div>
-</body>
+  <body>
+    <ul>
+      <li><a href="forward_kinematics.html">Forward Kinematics </a></li>
+      <li><a href="inverse_kinematics.html">Inverse Kinematics </a></li>
+      <li><a href="space_jacobian.html">Space Jacobian</a></li>
+  </body>
 </html>
