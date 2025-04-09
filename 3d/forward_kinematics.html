@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>2R Robot - Drag & Drop Control</title>
+  <link rel="stylesheet" href="../styles/homepage.css" />
+  <script defer src="../js/2r.js"></script>
+  <script defer src="../js/explanation.js"></script>
+</head>
+<body>
+  <a href="../index.html">← Back to Home</a>
+
+  <!-- Canvas Area -->
+  <div>
+    <h2>2R Robot Arm – Drag to Rotate or Move Base</h2>
+    <canvas id="canvas" width="600" height="600"></canvas>
+  </div>
+
+  <!-- Manual Controls -->
+  <div id="controls">
+    <h3>Manual Input</h3>
+    <label>θ1 (deg): <input type="number" id="theta1Input" step="0.1"></label>
+    <label>θ2 (deg): <input type="number" id="theta2Input" step="0.1"></label>
+    <button onclick="applyThetaInputs()">Apply Angles</button>
+  </div>
+
+  <!-- Forward Kinematics Explanation -->
+  <div id="explanation"></div>
+</body>
+</html>

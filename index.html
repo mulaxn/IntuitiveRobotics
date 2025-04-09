@@ -1,15 +1,48 @@
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles/homepage.css" />
-    <link rel="stylesheet" href="styles/global.css" />
-    <title>Subhan Haq's Website</title>
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="styles/homepage.css" />
+  <title>Subhan Haq's Website</title>
+</head>
 
-  <body>
-    <ul>
-      <li><a href="forward_kinematics.html">Forward Kinematics </a></li>
-      <li><a href="inverse_kinematics.html">Inverse Kinematics </a></li>
-      <li><a href="space_jacobian.html">Space Jacobian</a></li>
-  </body>
+<body>
+  <main>
+    <header>
+      <h1 class="main-title">IntuitiveRobotics</h1>
+    </header>
+
+    <section class="description">
+      <p>This website is part of our final project for the Intro to Robotic Manipulation course. 
+      It is a visual learning tool designed to help students understand key robotics concepts such as 
+      <strong>Forward Kinematics</strong>, <strong>Inverse Kinematics</strong>, and <strong>Space Jacobians</strong>.</p>
+      
+      <p>We aim to make robotics more intuitive and interactive for learners by combining code, visualization, and theory.</p>
+    </section>
+
+    <section class="category-section">
+      <h2>Planar Robots (2D)</h2>
+      <div class="nav-buttons">
+        <a class="button" href="2d/forward_kinematics.html">Forward Kinematics</a>
+        <a class="button" href="2d/inverse_kinematics.html">Inverse Kinematics</a>
+        <a class="button" href="2d/space_jacobian.html">Space Jacobian</a>
+      </div>
+    </section>
+
+    <section class="category-section">
+      <h2>Spatial Robots (3D)</h2>
+      <div class="nav-buttons">
+        <a class="button" href="3d/forward_kinematics.html">Forward Kinematics</a>
+        <a class="button" href="3d/inverse_kinematics.html">Inverse Kinematics</a>
+        <a class="button" href="3d/space_jacobian.html">Space Jacobian</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Created by Subhan Haq & Shajan Alam | Supervised by Prof. Vinicius da Prado</p>
+    <p>This project is part of the Intro to Robotic Manipulation course. Not yet licensed.</p>
+  </footer>
+</body>
 </html>

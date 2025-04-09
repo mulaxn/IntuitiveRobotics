@@ -84,4 +84,4 @@ exp =
     together according to the formula and get our answer.
 </p>`
 
-explaination.innerHTML = exp;
+explanation.innerHTML = exp;
