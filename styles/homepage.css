@@ -3,7 +3,15 @@ body {
     flex-direction: column;
     gap: 20px;
     font-family: Arial, sans-serif;
-    min-height: 100vh; /* ensures full height layout */
+    width: 100%;
+}
+
+#top {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    font-family: Arial, sans-serif;
+    width: 90%;
 }
 
 canvas {
@@ -11,15 +19,21 @@ canvas {
     background-color: #f9f9f9;
     cursor: grab;
 }
+
+#controls-container {
+    gap: 10px;
+}
+
 #controls {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    width: 50%;
 }
 label {
     font-size: 14px;
 }
-#explaination{
+.explaination{
     padding-top: 68px;
 }
 

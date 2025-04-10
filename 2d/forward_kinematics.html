@@ -4,27 +4,37 @@
   <meta charset="UTF-8">
   <title>2R Robot - Drag & Drop Control</title>
   <link rel="stylesheet" href="../styles/homepage.css" />
+  <link rel="stylesheet" href="../styles/robot.css" />
   <script defer src="../js/2r.js"></script>
-  <script defer src="../js/explanation.js"></script>
+  <script defer src="../js/forwardKinExp1.js"></script>
+  <script defer src="../js/forwardKinExp2.js"></script>
 </head>
 <body>
   <a href="../index.html">← Back to Home</a>
 
-  <!-- Canvas Area -->
-  <div>
-    <h2>2R Robot Arm – Drag to Rotate or Move Base</h2>
-    <canvas id="canvas" width="600" height="600"></canvas>
-  </div>
+  <div id="top"> 
+    <div>
+      <!-- Canvas Area -->
+      <div>
+        <h2>2R Robot Arm – Drag to Rotate or Move Base</h2>
+        <canvas id="canvas" width="600" height="600"></canvas>
+      </div>
+      
+    </div>
+    
+    <div id="controls-container">
 
-  <!-- Manual Controls -->
-  <div id="controls">
-    <h3>Manual Input</h3>
-    <label>θ1 (deg): <input type="number" id="theta1Input" step="0.1"></label>
-    <label>θ2 (deg): <input type="number" id="theta2Input" step="0.1"></label>
-    <button onclick="applyThetaInputs()">Apply Angles</button>
-  </div>
+      <!-- Manual Controls -->
+      <div id="controls">
+        <h3>Manual Input</h3>
+        <label>θ1 (deg): <input type="number" id="theta1Input" step="0.1"></label>
+        <label>θ2 (deg): <input type="number" id="theta2Input" step="0.1"></label>
+        <button onclick="applyThetaInputs()">Apply Angles</button>
+      </div>
 
-  <!-- Forward Kinematics Explanation -->
-  <div id="explanation"></div>
+      <div id="explanation1"></div>
+    </div>
+  </div>
+  <div id="explanation2"></div>
 </body>
 </html>
