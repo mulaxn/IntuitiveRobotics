@@ -31,18 +31,6 @@ exp =
     
     <br></br>
 
-    Revolute: 
-    
-    <br></br>
-
-    To calculate the angular velocity we simply find which axis the joint
-    is rotating in relative to the reference frame and treat it as a unit vector.
-    So if the join is rotating in the x-axis relative to the reference frame,
-    the angular velocity will be (1,0,0).
-
-    <br></br>
-
-    To calculate linear velocity, first we choose any point, q, on the axis of rotation.
 </p>`
 
 explanation1.innerHTML = exp;

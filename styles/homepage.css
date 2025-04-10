@@ -21,6 +21,8 @@ canvas {
 }
 
 #controls-container {
+    padding-top: 50px;
+    padding-left: 50px;
     gap: 10px;
 }
 
@@ -29,6 +31,7 @@ canvas {
     flex-direction: column;
     gap: 10px;
     width: 50%;
+    padding-bottom: 25px;
 }
 label {
     font-size: 14px;
