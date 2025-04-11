@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Joint Type Showcase with Automatic Spherical Joint Animation</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #202020;
+    }
+    canvas {
+      display: block;
+    }
+    #ui-controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: white;
+    }
+    #ui-controls button {
+      margin: 3px 0;
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      width: 150px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui-controls">
+    <b>Select Joint Type:</b><br>
+    <button onclick="showJoint('revolute')">Revolute Joint</button>
+    <button onclick="showJoint('prismatic')">Prismatic Joint</button>
+    <button onclick="showJoint('helical')">Helical Joint</button>
+    <button onclick="showJoint('cylindrical')">Cylindrical Joint</button>
+    <button onclick="showJoint('universal')">Universal Joint</button>
+    <button onclick="showJoint('spherical')">Spherical Joint</button>
+  </div>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let currentJoint = null;  // Reference to currently displayed joint
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x202020);
+
+      camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(3, 2, 5);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      // Basic lighting (clean background, no axes or grid)
+      const ambientLight = new THREE.AmbientLight(0x404040);
+      scene.add(ambientLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(5, 5, 5);
+      scene.add(directionalLight);
+
+      animate();
+    }
+
+    // Create a revolute joint representation (a rotated cylinder).
+    function createRevoluteJoint() {
+      const group = new THREE.Group();
+      const geometry = new THREE.CylinderGeometry(0.15, 0.15, 1, 32);
+      const material = new THREE.MeshStandardMaterial({ color: 0xff5555 });
+      const cylinder = new THREE.Mesh(geometry, material);
+      // Rotate so that the cylinder is horizontal (like a hinge).
+      cylinder.rotation.z = Math.PI / 2;
+      group.add(cylinder);
+      return group;
+    }
+
+    // Create a prismatic joint representation (a base block with a slider block).
+    function createPrismaticJoint() {
+      const group = new THREE.Group();
+      const baseGeom = new THREE.BoxGeometry(1, 0.2, 0.5);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x55ff55 });
+      const base = new THREE.Mesh(baseGeom, baseMat);
+      base.position.x = -0.3;
+      group.add(base);
+      const sliderGeom = new THREE.BoxGeometry(0.8, 0.2, 0.5);
+      const sliderMat = new THREE.MeshStandardMaterial({ color: 0x5555ff });
+      const slider = new THREE.Mesh(sliderGeom, sliderMat);
+      slider.position.x = 0.3;
+      group.add(slider);
+      return group;
+    }
+
+    // Create a helical joint representation (a cylinder with a helix drawn over it).
+    function createHelicalJoint() {
+      const group = new THREE.Group();
+      const baseGeom = new THREE.CylinderGeometry(0.2, 0.2, 1, 32);
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0xffff55 });
+      const baseCyl = new THREE.Mesh(baseGeom, baseMat);
+      group.add(baseCyl);
+
+      // Create a helical tube.
+      const points = [];
+      const turns = 2;
+      const numPoints = 50;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints * turns * Math.PI * 2;
+        const x = 0.3 * Math.cos(t);
+        const y = -0.5 + (1 * i / numPoints);
+        const z = 0.3 * Math.sin(t);
+        points.push(new THREE.Vector3(x, y, z));
+      }
+      const helixCurve = new THREE.CatmullRomCurve3(points);
+      const tubeGeom = new THREE.TubeGeometry(helixCurve, 64, 0.05, 8, false);
+      const tubeMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
+      const helix = new THREE.Mesh(tubeGeom, tubeMat);
+      group.add(helix);
+      return group;
+    }
+
+    // Create a cylindrical joint representation (two concentric cylinders).
+    function createCylindricalJoint() {
+      const group = new THREE.Group();
+      const outerGeom = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+      const outerMat = new THREE.MeshStandardMaterial({ color: 0x00ffff });
+      const outerCyl = new THREE.Mesh(outerGeom, outerMat);
+      group.add(outerCyl);
+      const innerGeom = new THREE.CylinderGeometry(0.3, 0.3, 0.8, 32);
+      const innerMat = new THREE.MeshStandardMaterial({ color: 0xff00ff });
+      const innerCyl = new THREE.Mesh(innerGeom, innerMat);
+      innerCyl.position.y = 0.1;
+      group.add(innerCyl);
+      return group;
+    }
+
+    // Create a universal joint representation (two intersecting cylinders at right angles).
+    function createUniversalJoint() {
+      const group = new THREE.Group();
+      const geom1 = new THREE.CylinderGeometry(0.15, 0.15, 1, 32);
+      const mat1 = new THREE.MeshStandardMaterial({ color: 0x8a2be2 });
+      const cyl1 = new THREE.Mesh(geom1, mat1);
+      group.add(cyl1);
+      const geom2 = new THREE.CylinderGeometry(0.15, 0.15, 1, 32);
+      const mat2 = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+      const cyl2 = new THREE.Mesh(geom2, mat2);
+      cyl2.rotation.z = Math.PI / 2;
+      group.add(cyl2);
+      return group;
+    }
+
+    // Create a spherical joint representation (a sphere) that rotates automatically.
+    function createSphericalJoint() {
+      const group = new THREE.Group();
+      const sphereGeom = new THREE.SphereGeometry(0.5, 32, 32);
+      const sphereMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+      const sphere = new THREE.Mesh(sphereGeom, sphereMat);
+      group.add(sphere);
+      // Mark this group as a spherical joint for automatic rotation.
+      group.userData.type = "spherical";
+      return group;
+    }
+
+    // Function to remove any existing joint and display the selected one.
+    function showJoint(type) {
+      if (currentJoint !== null) {
+        scene.remove(currentJoint);
+        currentJoint = null;
+      }
+      switch (type) {
+        case "revolute":
+          currentJoint = createRevoluteJoint();
+          break;
+        case "prismatic":
+          currentJoint = createPrismaticJoint();
+          break;
+        case "helical":
+          currentJoint = createHelicalJoint();
+          break;
+        case "cylindrical":
+          currentJoint = createCylindricalJoint();
+          break;
+        case "universal":
+          currentJoint = createUniversalJoint();
+          break;
+        case "spherical":
+          currentJoint = createSphericalJoint();
+          break;
+        default:
+          console.error("Unknown joint type:", type);
+      }
+      if (currentJoint !== null) {
+        currentJoint.position.set(0, 0, 0);
+        scene.add(currentJoint);
+      }
+    }
+
+    // Animation loop: auto rotates the spherical joint if it's displayed.
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+
+      // If the currently displayed joint is spherical, rotate it automatically.
+      if (currentJoint && currentJoint.userData.type === "spherical") {
+        currentJoint.rotation.x += 0.01;
+        currentJoint.rotation.y += 0.01;
+        currentJoint.rotation.z += 0.01;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    init();
+  </script>
+</body>
+</html>

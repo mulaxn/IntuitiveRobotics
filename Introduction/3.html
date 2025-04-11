@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0" />
+  <title>3D Cube with Grid and Labeled Axes</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+    }
+    #matrix-display {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre;
+      max-width: 400px;
+    }
+    button {
+      margin-top: 5px;
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <b>Controls:</b><br>
+    Click the cube to select it.<br>
+    <b>Move:</b> Arrow keys<br>
+    <b>Rotate (Keyboard):</b> X/Y/Z (Apply rotation matrix about the corresponding axis)<br>
+    <b>Scale:</b> + / - (Increase/Decrease size)<br><br>
+
+    <b>Rotate (Buttons):</b><br>
+    <button onclick="rotateCube('x', 90)">Rotate +90° X</button>
+    <button onclick="rotateCube('x', -90)">Rotate -90° X</button>
+    <button onclick="rotateCube('y', 90)">Rotate +90° Y</button>
+    <button onclick="rotateCube('y', -90)">Rotate -90° Y</button>
+    <button onclick="rotateCube('z', 90)">Rotate +90° Z</button>
+    <button onclick="rotateCube('z', -90)">Rotate -90° Z</button>
+    <button onclick="resetCube()">Reset Cube</button>
+  </div>
+
+  <div id="matrix-display">
+    Rotation Matrix:
+    [ 1, 0, 0 ]
+    [ 0, 1, 0 ]
+    [ 0, 0, 1 ]
+  </div>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let cube, greenCube, selectedCube = null;
+    let rotationMatrix = new THREE.Matrix4().identity();
+
+    function init() {
+      // Create scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x202020);
+
+      // Camera
+      camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(3, 3, 5);
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Orbit Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.minDistance = 1;
+      controls.maxDistance = 15;
+
+      // 1) AxesHelper (shows red X, green Y, blue Z lines)
+      const axesHelper = new THREE.AxesHelper(5);
+      scene.add(axesHelper);
+
+      // 2) GridHelper on the XZ-plane
+      const gridHelper = new THREE.GridHelper(10, 10);
+      scene.add(gridHelper);
+
+      // 3) Labeled Axes (Number lines):
+      addNumberLineX(-5, 5, 1, 0xff0000); // Red X
+      addNumberLineY(-5, 5, 1, 0x00ff00); // Green Y
+      addNumberLineZ(-5, 5, 1, 0x0000ff); // Blue Z
+
+      // Lighting
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(5, 5, 5);
+      scene.add(light);
+      scene.add(new THREE.AmbientLight(0x404040));
+
+      // Create blue cube
+      const geometry = new THREE.BoxGeometry();
+      const blueMaterial = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+      cube = new THREE.Mesh(geometry, blueMaterial);
+      cube.position.set(0, 0, 0);
+      scene.add(cube);
+
+      // Create green cube
+      const greenMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+      greenCube = new THREE.Mesh(geometry, greenMaterial);
+      greenCube.position.set(2, 0, 0);
+      scene.add(greenCube);
+
+      // Events
+      window.addEventListener("click", onCubeClick);
+      window.addEventListener("keydown", onKeyPress);
+
+      updateAllDisplays();
+      animate();
+    }
+
+    function onCubeClick(event) {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects([cube, greenCube]);
+
+      if (intersects.length > 0) {
+        selectedCube = intersects[0].object;
+        // Reset emissive for both cubes
+        cube.material.emissive.set(0x000000);
+        greenCube.material.emissive.set(0x000000);
+        // Highlight selected cube
+        selectedCube.material.emissive.set(0x888888);
+      }
+    }
+
+    function rotateCube(axis, degrees) {
+      if (!selectedCube) return;
+
+      const radians = degrees * (Math.PI / 180);
+      let rotationMatrixNew;
+
+      if (axis === "x") {
+        rotationMatrixNew = new THREE.Matrix4().makeRotationX(radians);
+      } else if (axis === "y") {
+        rotationMatrixNew = new THREE.Matrix4().makeRotationY(radians);
+      } else if (axis === "z") {
+        rotationMatrixNew = new THREE.Matrix4().makeRotationZ(radians);
+      }
+
+      rotationMatrix.multiply(rotationMatrixNew);
+      selectedCube.applyMatrix4(rotationMatrixNew);
+
+      updateAllDisplays();
+    }
+
+    function resetCube() {
+      if (!selectedCube) return;
+
+      // Move blue cube back to (0,0,0) or green cube back to (2,0,0)
+      selectedCube.position.set(selectedCube === cube ? 0 : 2, 0, 0);
+      selectedCube.rotation.set(0, 0, 0);
+      selectedCube.scale.set(1, 1, 1);
+      rotationMatrix.identity();
+
+      updateAllDisplays();
+    }
+
+    function onKeyPress(event) {
+      if (!selectedCube) return;
+
+      const moveStep = 0.2;
+      const scaleStep = 0.1;
+
+      switch (event.key) {
+        case "ArrowLeft":
+          selectedCube.position.x -= moveStep;
+          break;
+        case "ArrowRight":
+          selectedCube.position.x += moveStep;
+          break;
+        case "ArrowUp":
+          selectedCube.position.y += moveStep;
+          break;
+        case "ArrowDown":
+          selectedCube.position.y -= moveStep;
+          break;
+        case "x":
+          rotateCube("x", 10);
+          break;
+        case "y":
+          rotateCube("y", 10);
+          break;
+        case "z":
+          rotateCube("z", 10);
+          break;
+        case "+":
+        case "=":
+          selectedCube.scale.multiplyScalar(1 + scaleStep);
+          break;
+        case "-":
+          selectedCube.scale.multiplyScalar(1 - scaleStep);
+          break;
+      }
+
+      updateAllDisplays();
+    }
+
+    // ------------------ LABELED AXIS FUNCTIONS ------------------
+
+    // 1) Labeled number line along the X-axis
+    //    color: e.g., 0xff0000 for red
+    function addNumberLineX(minVal, maxVal, step, color) {
+      const group = new THREE.Group();
+      scene.add(group);
+
+      // Main axis line
+      const mat = new THREE.LineBasicMaterial({ color });
+      const points = [
+        new THREE.Vector3(minVal, 0, 0),
+        new THREE.Vector3(maxVal, 0, 0)
+      ];
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(geometry, mat);
+      group.add(line);
+
+      // Tick marks and labels
+      for (let i = minVal; i <= maxVal; i += step) {
+        // Tick lines from y=+0.1 to y=-0.1
+        const tickPoints = [
+          new THREE.Vector3(i, 0.1, 0),
+          new THREE.Vector3(i, -0.1, 0)
+        ];
+        const tickGeom = new THREE.BufferGeometry().setFromPoints(tickPoints);
+        const tickLine = new THREE.Line(tickGeom, mat);
+        group.add(tickLine);
+
+        // Label below the axis
+        addTextSprite(i.toString(), i, -0.3, 0, group);
+      }
+    }
+
+    // 2) Labeled number line along the Y-axis
+    function addNumberLineY(minVal, maxVal, step, color) {
+      const group = new THREE.Group();
+      scene.add(group);
+
+      // Main axis line
+      const mat = new THREE.LineBasicMaterial({ color });
+      const points = [
+        new THREE.Vector3(0, minVal, 0),
+        new THREE.Vector3(0, maxVal, 0)
+      ];
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(geometry, mat);
+      group.add(line);
+
+      // Ticks + labels
+      for (let i = minVal; i <= maxVal; i += step) {
+        const tickPoints = [
+          new THREE.Vector3( 0.1, i, 0),
+          new THREE.Vector3(-0.1, i, 0)
+        ];
+        const tickGeom = new THREE.BufferGeometry().setFromPoints(tickPoints);
+        const tickLine = new THREE.Line(tickGeom, mat);
+        group.add(tickLine);
+
+        // Label slightly to the left of axis
+        addTextSprite(i.toString(), -0.3, i, 0, group);
+      }
+    }
+
+    // 3) Labeled number line along the Z-axis
+    function addNumberLineZ(minVal, maxVal, step, color) {
+      const group = new THREE.Group();
+      scene.add(group);
+
+      // Main axis line
+      const mat = new THREE.LineBasicMaterial({ color });
+      const points = [
+        new THREE.Vector3(0, 0, minVal),
+        new THREE.Vector3(0, 0, maxVal)
+      ];
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(geometry, mat);
+      group.add(line);
+
+      // Ticks + labels
+      for (let i = minVal; i <= maxVal; i += step) {
+        const tickPoints = [
+          new THREE.Vector3(0, 0.1, i),
+          new THREE.Vector3(0, -0.1, i)
+        ];
+        const tickGeom = new THREE.BufferGeometry().setFromPoints(tickPoints);
+        const tickLine = new THREE.Line(tickGeom, mat);
+        group.add(tickLine);
+
+        // Label slightly below axis (or rotate as needed)
+        addTextSprite(i.toString(), 0, -0.3, i, group);
+      }
+    }
+
+    // Helper to draw text with a sprite
+    function addTextSprite(text, x, y, z, parentGroup) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // Choose a font size/color
+      ctx.font = "24px Arial";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(text, 0, 24);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+      const sprite = new THREE.Sprite(spriteMaterial);
+
+      // Scale so text is readable
+      sprite.scale.set(0.6, 0.3, 1);
+      sprite.position.set(x, y, z);
+
+      parentGroup.add(sprite);
+    }
+
+    // -------------- END LABELED AXIS FUNCTIONS ------------------
+
+    // Utility: format a 4x4 matrix as a readable string
+    function matrixToString(m) {
+      const e = m.elements;
+      return (
+        `[ ${e[0].toFixed(2)},  ${e[4].toFixed(2)},  ${e[8].toFixed(2)},  ${e[12].toFixed(2)} ]\n` +
+        `[ ${e[1].toFixed(2)},  ${e[5].toFixed(2)},  ${e[9].toFixed(2)},  ${e[13].toFixed(2)} ]\n` +
+        `[ ${e[2].toFixed(2)},  ${e[6].toFixed(2)},  ${e[10].toFixed(2)}, ${e[14].toFixed(2)} ]\n` +
+        `[ ${e[3].toFixed(2)},  ${e[7].toFixed(2)},  ${e[11].toFixed(2)}, ${e[15].toFixed(2)} ]`
+      );
+    }
+
+    // Updates:
+    // 1) The "selected cube" rotation matrix display
+    // 2) The relative transforms: Green->Blue and Blue->Green
+    function updateAllDisplays() {
+      // 1. Selected cube rotation matrix
+      const e = rotationMatrix.elements;
+      let rotText =
+        `Rotation Matrix:\n` +
+        `[ ${e[0].toFixed(2)}, ${e[4].toFixed(2)}, ${e[8].toFixed(2)} ]\n` +
+        `[ ${e[1].toFixed(2)}, ${e[5].toFixed(2)}, ${e[9].toFixed(2)} ]\n` +
+        `[ ${e[2].toFixed(2)}, ${e[6].toFixed(2)}, ${e[10].toFixed(2)} ]\n\n`;
+
+      // 2. Relative transforms: green->blue & blue->green
+      cube.updateMatrixWorld(true);
+      greenCube.updateMatrixWorld(true);
+
+      const blueWorld = cube.matrixWorld.clone();
+      const greenWorld = greenCube.matrixWorld.clone();
+
+      // green->blue = Mblue * inv(Mgreen)
+      const greenToBlue = new THREE.Matrix4().multiplyMatrices(
+        blueWorld,
+        new THREE.Matrix4().copy(greenWorld).invert()
+      );
+
+      // blue->green = Mgreen * inv(Mblue)
+      const blueToGreen = new THREE.Matrix4().multiplyMatrices(
+        greenWorld,
+        new THREE.Matrix4().copy(blueWorld).invert()
+      );
+
+      const g2bText = `Green → Blue:\n` + matrixToString(greenToBlue);
+      const b2gText = `\n\nBlue → Green:\n` + matrixToString(blueToGreen);
+
+      document.getElementById("matrix-display").innerText =
+        rotText + g2bText + b2gText;
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    init();
+  </script>
+</body>
+</html>
