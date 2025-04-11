@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>2R Robot with Movable Obstacles & Inflated C-Space</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f0f0f0;
+    }
+    .canvas-container {
+      margin: 10px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Workspace Canvas: robot and obstacles -->
+  <div class="canvas-container">
+    <canvas id="workspace" width="600" height="600"></canvas>
+  </div>
+  <!-- C-Space Canvas: configuration space with inflated obstacles -->
+  <div class="canvas-container">
+    <canvas id="cspace" width="300" height="300"></canvas>
+  </div>
+
+  <script>
+    /*******************
+     * Workspace Setup *
+     *******************/
+    const wsCanvas = document.getElementById('workspace');
+    const wsCtx = wsCanvas.getContext('2d');
+
+    // Robot parameters
+    const jointRadius = 10;
+    const link1Length = 150;
+    const link2Length = 100;
+    let base = { x: 250, y: 300 };
+    // Angles (radians); note our convention: input degrees are converted with a negation.
+    let theta1 = 0;
+    let theta2 = 0;
+    let draggingPart = null;
+    let draggingObstacle = null;  // new variable for obstacle dragging
+
+    // Define fixed obstacles ("rocks") in the workspace
+    // Each obstacle has a center position and a radius.
+    const obstacles = [
+      { x: 300, y: 200, r: 30 },  // Rock A
+      { x: 150, y: 400, r: 30 }   // Rock B
+    ];
+
+    // Draw obstacles (rocks) in the workspace
+    function drawObstacles() {
+      wsCtx.fillStyle = 'gray';
+      obstacles.forEach(ob => {
+        wsCtx.beginPath();
+        wsCtx.arc(ob.x, ob.y, ob.r, 0, 2 * Math.PI);
+        wsCtx.fill();
+      });
+    }
+
+    // Compute joint positions based on base and angles.
+    // Optionally, you can supply specific angles (used for sampling in C-space).
+    function getJointPositions(theta1Val = theta1, theta2Val = theta2) {
+      const joint1 = {
+        x: base.x + link1Length * Math.cos(theta1Val),
+        y: base.y + link1Length * Math.sin(theta1Val)
+      };
+      const joint2 = {
+        x: joint1.x + link2Length * Math.cos(theta1Val + theta2Val),
+        y: joint1.y + link2Length * Math.sin(theta1Val + theta2Val)
+      };
+      return { joint1, joint2 };
+    }
+
+    // Given a point pt and a line segment from v to w, compute the minimum distance.
+    function pointLineDistance(pt, v, w) {
+      const l2 = (w.x - v.x) ** 2 + (w.y - v.y) ** 2;
+      if (l2 === 0) return Math.hypot(pt.x - v.x, pt.y - v.y);
+      let t = ((pt.x - v.x) * (w.x - v.x) + (pt.y - v.y) * (w.y - v.y)) / l2;
+      t = Math.max(0, Math.min(1, t));
+      const proj = { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) };
+      return Math.hypot(pt.x - proj.x, pt.y - proj.y);
+    }
+
+    // Check if a link (from start to end) collides with any obstacle.
+    function checkCollision(linkStart, linkEnd) {
+      for (const ob of obstacles) {
+        const d = pointLineDistance({ x: ob.x, y: ob.y }, linkStart, linkEnd);
+        if (d < ob.r) return true;
+      }
+      return false;
+    }
+
+    // Draw the robot arm with collision indication
+    function drawRobot() {
+      wsCtx.clearRect(0, 0, wsCanvas.width, wsCanvas.height);
+      drawObstacles();
+
+      const { joint1, joint2 } = getJointPositions();
+      const collision1 = checkCollision(base, joint1);
+      const collision2 = checkCollision(joint1, joint2);
+
+      // Draw link 1 (blue if no collision, red if collision)
+      wsCtx.beginPath();
+      wsCtx.moveTo(base.x, base.y);
+      wsCtx.lineTo(joint1.x, joint1.y);
+      wsCtx.strokeStyle = collision1 ? 'red' : 'blue';
+      wsCtx.lineWidth = 6;
+      wsCtx.stroke();
+
+      // Draw link 2 (green or red)
+      wsCtx.beginPath();
+      wsCtx.moveTo(joint1.x, joint1.y);
+      wsCtx.lineTo(joint2.x, joint2.y);
+      wsCtx.strokeStyle = collision2 ? 'red' : 'green';
+      wsCtx.lineWidth = 6;
+      wsCtx.stroke();
+
+      // Draw joints
+      wsCtx.beginPath();
+      wsCtx.arc(base.x, base.y, jointRadius, 0, 2 * Math.PI);
+      wsCtx.fillStyle = draggingPart === 'base' ? 'orange' : 'black';
+      wsCtx.fill();
+
+      wsCtx.beginPath();
+      wsCtx.arc(joint1.x, joint1.y, jointRadius, 0, 2 * Math.PI);
+      wsCtx.fillStyle = draggingPart === 'joint1' ? 'orange' : 'blue';
+      wsCtx.fill();
+
+      wsCtx.beginPath();
+      wsCtx.arc(joint2.x, joint2.y, jointRadius, 0, 2 * Math.PI);
+      wsCtx.fillStyle = draggingPart === 'joint2' ? 'orange' : 'green';
+      wsCtx.fill();
+    }
+
+    /************************
+     * Configuration Space *
+     ************************/
+    const csCanvas = document.getElementById('cspace');
+    const csCtx = csCanvas.getContext('2d');
+
+    // Draw the configuration space.
+    // We sample a grid of (θ₁, θ₂) configurations and mark those where collisions occur.
+    function drawCspace() {
+      csCtx.clearRect(0, 0, csCanvas.width, csCanvas.height);
+
+      const resolution = 5; // degrees step for sampling
+      // Loop over θ₁ and θ₂ (in degrees; range -180 to 180)
+      for (let t1 = -180; t1 <= 180; t1 += resolution) {
+        for (let t2 = -180; t2 <= 180; t2 += resolution) {
+          // Convert to radians (note our robot uses negative conversion for input)
+          let r1 = t1 * (-Math.PI / 180);
+          let r2 = t2 * (-Math.PI / 180);
+          let { joint1, joint2 } = getJointPositions(r1, r2);
+          let collision = checkCollision(base, joint1) || checkCollision(joint1, joint2);
+          if (collision) {
+            // Map the t1 and t2 values to C-space canvas coordinates.
+            const x = ((t1 + 180) / 360) * csCanvas.width;
+            const y = csCanvas.height - ((t2 + 180) / 360) * csCanvas.height;
+            csCtx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+            csCtx.fillRect(
+              x,
+              y,
+              (resolution / 360) * csCanvas.width,
+              (resolution / 360) * csCanvas.height
+            );
+          }
+        }
+      }
+      // Plot the current configuration as a red dot.
+      const theta1Deg = theta1 * (-180 / Math.PI);
+      const theta2Deg = theta2 * (-180 / Math.PI);
+      const xCoord = ((theta1Deg + 180) / 360) * csCanvas.width;
+      const yCoord = csCanvas.height - ((theta2Deg + 180) / 360) * csCanvas.height;
+      csCtx.fillStyle = 'red';
+      csCtx.beginPath();
+      csCtx.arc(xCoord, yCoord, 5, 0, 2 * Math.PI);
+      csCtx.fill();
+
+      // ----- Add labels to the C-space canvas -----
+      csCtx.font = "14px Arial";
+      csCtx.fillStyle = "black";
+      csCtx.textAlign = "center";
+      // Label for θ₁ along the x-axis (bottom)
+      csCtx.fillText("θ₁ (deg)", csCanvas.width / 2, csCanvas.height - 5);
+      
+      // Label for θ₂ along the y-axis (left side, rotated)
+      csCtx.save();
+      csCtx.translate(15, csCanvas.height / 2);
+      csCtx.rotate(-Math.PI / 2);
+      csCtx.fillText("θ₂ (deg)", 0, 0);
+      csCtx.restore();
+    }
+
+    /******************
+     * Display Update *
+     ******************/
+    function draw() {
+      drawRobot();
+      drawCspace();
+    }
+
+    /******************
+     * Mouse Handling *
+     ******************/
+    function getMousePos(evt) {
+      const rect = wsCanvas.getBoundingClientRect();
+      return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+    }
+
+    function isInside(pos, target, tol = 5) {
+      return Math.hypot(pos.x - target.x, pos.y - target.y) < (target.r || jointRadius) + tol;
+    }
+
+    // Handle mousedown on the workspace canvas:
+    wsCanvas.addEventListener('mousedown', (evt) => {
+      const mouse = getMousePos(evt);
+      // First, check if an obstacle is being clicked (draggable rock)
+      for (let i = 0; i < obstacles.length; i++) {
+        if (Math.hypot(mouse.x - obstacles[i].x, mouse.y - obstacles[i].y) < obstacles[i].r + 5) {
+          draggingObstacle = i;
+          return; // Found an obstacle; do not check robot parts.
+        }
+      }
+      // Otherwise, check robot parts
+      const { joint1, joint2 } = getJointPositions();
+      if (Math.hypot(mouse.x - base.x, mouse.y - base.y) < jointRadius + 5) {
+        draggingPart = 'base';
+      } else if (Math.hypot(mouse.x - joint1.x, mouse.y - joint1.y) < jointRadius + 5) {
+        draggingPart = 'joint1';
+      } else if (Math.hypot(mouse.x - joint2.x, mouse.y - joint2.y) < jointRadius + 5) {
+        draggingPart = 'joint2';
+      }
+    });
+
+    // Handle mousemove on the workspace canvas:
+    wsCanvas.addEventListener('mousemove', (evt) => {
+      const mouse = getMousePos(evt);
+      // If an obstacle is being dragged, update its position.
+      if (draggingObstacle !== null) {
+        obstacles[draggingObstacle].x = mouse.x;
+        obstacles[draggingObstacle].y = mouse.y;
+        draw();
+        return;
+      }
+      // Otherwise, update robot configuration.
+      if (!draggingPart) return;
+      const { joint1 } = getJointPositions();
+      if (draggingPart === 'base') {
+        base = mouse;
+      } else if (draggingPart === 'joint1') {
+        theta1 = Math.atan2(mouse.y - base.y, mouse.x - base.x);
+      } else if (draggingPart === 'joint2') {
+        theta2 = Math.atan2(mouse.y - joint1.y, mouse.x - joint1.x) - theta1;
+      }
+      draw();
+    });
+
+    // Handle mouseup on the workspace canvas:
+    wsCanvas.addEventListener('mouseup', () => {
+      draggingPart = null;
+      draggingObstacle = null;
+    });
+
+    // Initial draw
+    draw();
+  </script>
+</body>
+</html>
