@@ -46,6 +46,7 @@
 </head>
 <body>
   <div id="controls">
+    <button><a href="../index.html">Home </a></button>
     <b>Controls:</b><br>
     Click anywhere on the canvas (the robot is always active).<br>
     <b>Move Robot:</b> Arrow keys (Left/Right: X; Up/Down: Z)<br><br>
@@ -192,6 +193,11 @@
       joint2.rotation.set(0, 0, 0);
       // Reset prismatic joint to its default relative position.
       joint3.position.set(1.0, 0, 0);
+    }
+
+    // Home Button
+    function home() {
+      
     }
 
     // Joint control functions
